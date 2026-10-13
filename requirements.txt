@@ -2,9 +2,8 @@ streamlit
 boto3
 botocore
 supabase
-google-generativeai
+google-genai
 requests
 pandas
-google-genai
 fpdf2
 Pillow
