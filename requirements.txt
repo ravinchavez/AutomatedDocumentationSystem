@@ -1,0 +1,7 @@
+streamlit
+boto3
+botocore
+supabase
+google-generativeai
+requests
+pandas
