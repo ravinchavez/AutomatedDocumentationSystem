@@ -19,9 +19,9 @@ a JSON object with these keys. Use null for any field you cannot determine.
   "or_number": string | null,
   "transaction_date": "YYYY-MM-DD" | null,
   "documentation_date": "YYYY-MM-DD" | null,
-  "currency": "PHP" | "USD" | "EUR" | "JPY" | null,
+  "currency": "THB" | "IDR" | "PHP" | "MYR" | null,
   "total_amount": number | null,
-  "category": "Groceries" | "Utilities" | "Transport" | "Meals" | "Office" | "Other" | null,
+  "category": "Food & Groceries" | "Transportation" | "Housing & Utilities" | "Academic & School" | "Personal Care & Health" | "Clothing & Accessories" | "Communication & Tech" | "Social & Leisure" | "Travel & Exploration" | "Administrative & Financial" | null,
   "description": string | null,
   "image_context": string,
   "raw_text": string
