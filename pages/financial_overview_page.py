@@ -71,11 +71,17 @@ def _totals(df: pd.DataFrame) -> dict:
 
 
 def _kpi_row(totals: dict, currency: str) -> None:
-    c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Total spent", f"{currency} {totals['total']:,.2f}")
-    c2.metric("Transactions", f"{totals['count']}")
-    c3.metric("Avg per receipt", f"{currency} {totals['avg']:,.2f}")
-    c4.metric("Avg per day", f"{currency} {totals.get('per_day', 0):,.2f}")
+    metrics = [
+        ("Total spent", f"{currency} {totals['total']:,.2f}"),
+        ("Transactions", f"{totals['count']}"),
+        ("Avg per receipt", f"{currency} {totals['avg']:,.2f}"),
+        ("Avg per day", f"{currency} {totals.get('per_day', 0):,.2f}"),
+    ]
+
+    cols = st.columns(2)
+    for i, (label, value) in enumerate(metrics):
+        col = cols[i % 2]
+        col.metric(label, value)
 
 
 def _pie_by_category(df: pd.DataFrame, currency: str, key_suffix: str = "") -> None:
