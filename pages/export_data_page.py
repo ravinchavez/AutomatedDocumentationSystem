@@ -104,7 +104,7 @@ def export_data_page():
 
     preview_cols = [
         c for c in [
-            "transaction_date", "merchant", "category",
+            "transaction_date", "merchant_id", "category",
             "currency", "total_amount", "or_number",
         ] if c in filtered.columns
     ]
