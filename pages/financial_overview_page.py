@@ -24,7 +24,7 @@ def _load_receipts() -> pd.DataFrame:
     )
     df["total_amount"] = pd.to_numeric(df["total_amount"], errors="coerce").fillna(0)
     df["category"] = df["category"].fillna("Uncategorized")
-    df["merchant"] = df.get("merchant", pd.Series(dtype=str)).fillna("Unknown")
+    df["merchant_id"] = df.get("merchant_id", pd.Series(dtype=str)).fillna("Unknown")
     df = df.dropna(subset=["transaction_date"])
     return df.sort_values("transaction_date", ascending=False)
 
@@ -70,7 +70,6 @@ def _totals(df: pd.DataFrame) -> dict:
     }
 
 
-# ---------- Charts ----------
 def _kpi_row(totals: dict, currency: str) -> None:
     c1, c2, c3, c4 = st.columns(4)
     c1.metric("Total spent", f"{currency} {totals['total']:,.2f}")
@@ -145,12 +144,14 @@ def _line_over_time(df: pd.DataFrame, currency: str, period: str) -> None:
 
 
 def _bar_by_merchant(
-    df: pd.DataFrame, currency: str, period: str, top_n: int = 10
-) -> None:
+    df: pd.DataFrame, 
+    currency: str, 
+    period: str, 
+    top_n: int = 10) -> None:
     if df.empty:
         return
     agg = (
-        df.groupby("merchant", as_index=False)["total_amount"]
+        df.groupby("merchant_id", as_index=False)["total_amount"]
         .sum()
         .sort_values("total_amount", ascending=False)
         .head(top_n)
@@ -158,7 +159,7 @@ def _bar_by_merchant(
     fig = px.bar(
         agg,
         x="total_amount",
-        y="merchant",
+        y="merchant_id",
         orientation="h",
         title=f"Top {top_n} merchants ({currency})",
     )
@@ -178,11 +179,9 @@ def _bar_by_merchant(
     )
 
 
-def _sankey_flow(df: pd.DataFrame, currency: str, period: str) -> None:
-    """
-    Sankey:  Category  →  Merchant
-    Only the top N categories and merchants to keep it readable.
-    """
+def _sankey_flow(df: pd.DataFrame, 
+                 currency: str, 
+                 period: str) -> None:
     if df.empty:
         st.info("No data for a Sankey flow.")
         return
@@ -195,18 +194,18 @@ def _sankey_flow(df: pd.DataFrame, currency: str, period: str) -> None:
     trimmed = trimmed[trimmed["category"].isin(top_cats)]
 
     top_merchants = (
-        trimmed.groupby("merchant")["total_amount"].sum()
+        trimmed.groupby("merchant_id")["total_amount"].sum()
         .sort_values(ascending=False).head(12).index
     )
-    trimmed = trimmed[trimmed["merchant"].isin(top_merchants)]
+    trimmed = trimmed[trimmed["merchant_id"].isin(top_merchants)]
 
     edges = (
-        trimmed.groupby(["category", "merchant"], as_index=False)["total_amount"]
+        trimmed.groupby(["category", "merchant_id"], as_index=False)["total_amount"]
         .sum()
     )
 
     cats = list(edges["category"].unique())
-    merchs = list(edges["merchant"].unique())
+    merchs = list(edges["merchant_id"].unique())
     labels = cats + merchs
     cat_idx = {c: i for i, c in enumerate(cats)}
     merch_idx = {m: i + len(cats) for i, m in enumerate(merchs)}
@@ -223,7 +222,7 @@ def _sankey_flow(df: pd.DataFrame, currency: str, period: str) -> None:
             ),
             link=dict(
                 source=[cat_idx[c] for c in edges["category"]],
-                target=[merch_idx[m] for m in edges["merchant"]],
+                target=[merch_idx[m] for m in edges["merchant_id"]],
                 value=edges["total_amount"].tolist(),
                 hovertemplate="%{source.label} → %{target.label}<br>"
                               "%{value:,.2f}<extra></extra>",
@@ -248,7 +247,7 @@ def _detail_table(df: pd.DataFrame) -> None:
     show = df[
         [
             "transaction_date",
-            "merchant",
+            "merchant_id",
             "category",
             "currency",
             "total_amount",
