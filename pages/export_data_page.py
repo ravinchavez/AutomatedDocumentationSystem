@@ -128,7 +128,6 @@ def export_data_page():
 
     csv_bytes = export_df.to_csv(index=False).encode("utf-8-sig")
 
-    # Smart filename: include category/currency only when a specific one is chosen
     parts = [f"{start_date:%Y%m%d}"]
     if start_date != end_date:
         parts.append(f"{end_date:%Y%m%d}")

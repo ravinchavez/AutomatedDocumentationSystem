@@ -1,7 +1,7 @@
 # pages/all_transactions_page.py
 import streamlit as st
 from clients.b2_client import presigned_url
-from clients.supabase_client import list_receipts, delete_receipt
+from clients.supabase_client import list_receipts, delete_receipt, update_receipt
 
 
 @st.cache_data(ttl=300, show_spinner=False)
@@ -78,7 +78,7 @@ def all_transactions_page():
                         if st.button(
                             "Yes, delete",
                             key=f"confirm_del_{receipt_id}",
-                            type="primary",                            
+                            type="primary",
                             use_container_width=True,
                         ):
                             try:
@@ -101,10 +101,147 @@ def all_transactions_page():
                             st.session_state.pop("confirm_delete_id", None)
                             st.rerun()
                 else:
+                    dc1, dc2 = st.columns(2)
+                    with dc1:
+                        if st.button(
+                            "Delete",
+                            key=f"del_{receipt_id}",
+                            use_container_width=True,
+                        ):
+                            st.session_state["confirm_delete_id"] = receipt_id
+                            st.rerun()
+                    with dc2:
+                        if st.button(
+                            "Edit",
+                            key=f"edit_{receipt_id}",
+                            use_container_width=True,
+                        ):
+                            st.session_state["edit_receipt_id"] = receipt_id
+                            st.rerun()
+
+                if st.session_state.get("edit_receipt_id") == receipt_id:
+                    st.divider()
+                    st.subheader("Edit receipt")
+
+                    fields = (
+                        "merchant_id",
+                        "or_number",
+                        "category",
+                        "transaction_date",
+                        "documentation_date",
+                        "description",
+                        "currency",
+                        "total_amount",
+                        "php_total_amount",
+                    )
+
+                    with st.form(key=f"edit_form_{receipt_id}"):
+                        merchant_id = st.text_input(
+                            "Merchant",
+                            value=str(r.get("merchant_id") or ""),
+                            key=f"edit_merchant_{receipt_id}",
+                        )
+                        or_number = st.text_input(
+                            "OR #",
+                            value=str(r.get("or_number") or ""),
+                            key=f"edit_or_{receipt_id}",
+                        )
+                        category = st.text_input(
+                            "Category",
+                            value=str(r.get("category") or ""),
+                            key=f"edit_category_{receipt_id}",
+                        )
+                        transaction_date = st.text_input(
+                            "Transaction date",
+                            value=str(r.get("transaction_date") or ""),
+                            key=f"edit_transaction_date_{receipt_id}",
+                        )
+                        documentation_date = st.text_input(
+                            "Documentation date",
+                            value=str(r.get("documentation_date") or ""),
+                            key=f"edit_documentation_date_{receipt_id}",
+                        )
+                        description = st.text_area(
+                            "Description",
+                            value=str(r.get("description") or ""),
+                            key=f"edit_description_{receipt_id}",
+                        )
+                        currency = st.text_input(
+                            "Currency",
+                            value=str(r.get("currency") or ""),
+                            key=f"edit_currency_{receipt_id}",
+                        )
+                        total_amount = st.text_input(
+                            "Total amount",
+                            value=str(r.get("total_amount") or ""),
+                            key=f"edit_total_amount_{receipt_id}",
+                        )
+                        php_total_amount = st.text_input(
+                            "PHP total amount",
+                            value=str(r.get("php_total_amount") or ""),
+                            key=f"edit_php_total_amount_{receipt_id}",
+                        )
+
+                        save = st.form_submit_button(
+                            "Save changes",
+                            type="primary",
+                            use_container_width=True,
+                        )
+
+                    if save:
+                        try:
+                            def parse_amount(value):
+                                value = value.strip()
+                                return float(value) if value else None
+
+                            updates = {
+                                "merchant_id": merchant_id.strip() or None,
+                                "or_number": or_number.strip() or None,
+                                "category": category.strip() or None,
+                                "transaction_date": transaction_date.strip() or None,
+                                "documentation_date": documentation_date.strip() or None,
+                                "description": description.strip() or None,
+                                "currency": currency.strip() or None,
+                                "total_amount": parse_amount(total_amount),
+                                "php_total_amount": parse_amount(php_total_amount),
+                            }
+
+                            updated = update_receipt(receipt_id, updates)
+                            if updated:
+                                st.session_state.pop("edit_receipt_id", None)
+                                for field in fields:
+                                    st.session_state.pop(
+                                        f"edit_{field.replace('_', '')}_{receipt_id}",
+                                        None,
+                                    )
+                                # Clear the actual widget keys.
+                                for key in (
+                                    f"edit_merchant_{receipt_id}",
+                                    f"edit_or_{receipt_id}",
+                                    f"edit_category_{receipt_id}",
+                                    f"edit_transaction_date_{receipt_id}",
+                                    f"edit_documentation_date_{receipt_id}",
+                                    f"edit_description_{receipt_id}",
+                                    f"edit_currency_{receipt_id}",
+                                    f"edit_total_amount_{receipt_id}",
+                                    f"edit_php_total_amount_{receipt_id}",
+                                ):
+                                    st.session_state.pop(key, None)
+
+                                st.cache_data.clear()
+                                st.success("Receipt updated.")
+                                st.rerun()
+                            else:
+                                st.error("Update returned no rows.")
+                        except ValueError:
+                            st.error("Amounts must be valid numbers.")
+                        except Exception as e:
+                            st.error(f"Update failed: {e}")
+
                     if st.button(
-                        "Delete",
-                        key=f"del_{receipt_id}",
+                        "Cancel edit",
+                        key=f"cancel_edit_{receipt_id}",
                         use_container_width=True,
                     ):
-                        st.session_state["confirm_delete_id"] = receipt_id
+                        st.session_state.pop("edit_receipt_id", None)
                         st.rerun()
