@@ -42,14 +42,11 @@ def all_transactions_page():
 
         with st.expander(
             f"{_fmt(r.get('transaction_date'))} · {merchant} · {amount_str} · PHP {php_amount}",
-            key=f"receipt_{receipt_id}",
-            on_change="rerun",
         ):
             c1, c2 = st.columns([1, 2])
             with c1:
                 key = r.get("backblaze_image")
-                is_open = st.session_state[f"receipt_{receipt_id}"]["expanded"]
-                if key and is_open:
+                if key:
                     try:
                         st.image(
                             _cached_presigned(key),
@@ -57,7 +54,7 @@ def all_transactions_page():
                         )
                     except Exception as e:
                         st.warning(f"Image unavailable: {e}")
-                elif not key:
+                else:
                     st.caption("No image attached.")
             with c2:
                 st.write(f"**Merchant:** {merchant}")
