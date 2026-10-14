@@ -184,7 +184,7 @@ def build_liquidation_pdf(
         pdf.set_xy(MARGIN + 4, card_top + 4)
         pdf.set_font("Helvetica", "B", 11)
         pdf.set_text_color(0, 0, 0)
-        merchant = r.get("merchant") or "Unknown merchant"
+        merchant = r.get("merchant_id") or "Unknown merchant"
         pdf.cell(0, 6, f"{i}. {merchant}", ln=True)
 
         # Left: meta. Right: image
