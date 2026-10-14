@@ -1,7 +1,6 @@
 # clients/pdf_client.py
 import io
 from datetime import date, datetime
-from pathlib import Path
 
 import requests
 from fpdf import FPDF
@@ -15,20 +14,13 @@ CONTENT_W = PAGE_W - 2 * MARGIN
 class LiquidationPDF(FPDF):
     def __init__(self, title: str, user_email: str):
         super().__init__(orientation="P", unit="mm", format="A4")
-
-        font_dir = Path(r"C:\Windows\Fonts")
-        self.add_font("Arial", "", str(font_dir / "arial.ttf"))
-        self.add_font("Arial", "B", str(font_dir / "arialbd.ttf"))
-        self.add_font("Arial", "I", str(font_dir / "ariali.ttf"))
-        self.add_font("Arial", "BI", str(font_dir / "arialbi.ttf"))
-
         self.report_title = title
         self.user_email = user_email
         self.set_auto_page_break(auto=True, margin=20)
         self.set_margins(MARGIN, MARGIN, MARGIN)
 
     def header(self):
-        self.set_font("Arial", "B", 11)
+        self.set_font("Helvetica", "B", 11)
         self.set_text_color(80, 80, 80)
         self.cell(0, 6, self.report_title, align="L")
         self.cell(0, 6, self.user_email, align="R")
@@ -39,7 +31,7 @@ class LiquidationPDF(FPDF):
 
     def footer(self):
         self.set_y(-15)
-        self.set_font("Arial", "I", 8)
+        self.set_font("Helvetica", "I", 8)
         self.set_text_color(120, 120, 120)
         self.cell(0, 8, f"Page {self.page_no()}", align="C")
 
@@ -104,24 +96,23 @@ def build_liquidation_pdf(
     pdf = LiquidationPDF(title=title, user_email=user_email)
     pdf.add_page()
 
-    # ---------- Title block ----------
-    pdf.set_font("Arial", "B", 20)
+    pdf.set_font("Helvetica", "B", 20)
     pdf.set_text_color(0, 0, 0)
     pdf.cell(0, 12, "Liquidation Report", ln=True, align="C")
 
-    pdf.set_font("Arial", "", 11)
+    pdf.set_font("Helvetica", "", 11)
     pdf.set_text_color(80, 80, 80)
     pdf.cell(0, 6, f"Generated on {datetime.now():%B %d, %Y %H:%M}", ln=True, align="C")
     pdf.ln(4)
 
     if notes:
-        pdf.set_font("Arial", "", 10)
+        pdf.set_font("Helvetica", "", 10)
         pdf.set_text_color(60, 60, 60)
         pdf.multi_cell(CONTENT_W, 5, notes)
         pdf.ln(3)
 
     if not receipts:
-        pdf.set_font("Arial", "", 12)
+        pdf.set_font("Helvetica", "", 12)
         pdf.cell(0, 10, "No receipts to report.", ln=True)
         return bytes(pdf.output())
 
@@ -129,16 +120,15 @@ def build_liquidation_pdf(
     currencies = sorted({(r.get("currency") or "").upper() for r in receipts if r.get("currency")})
     dominant_ccy = currencies[0] if len(currencies) == 1 else "MIXED"
 
-    pdf.set_font("Arial", "B", 13)
+    pdf.set_font("Helvetica", "B", 13)
     pdf.cell(0, 8, "Summary", ln=True)
-    pdf.set_font("Arial", "", 11)
+    pdf.set_font("Helvetica", "", 11)
     pdf.cell(0, 6, f"Total receipts: {len(receipts)}", ln=True)
     pdf.cell(0, 6, f"Total amount: {_fmt_money(total, dominant_ccy)}", ln=True)
     if len(currencies) > 1:
         pdf.cell(0, 6, f"Currencies present: {', '.join(currencies)}", ln=True)
     pdf.ln(4)
 
-    # ---------- Category breakdown ----------
     by_cat: dict[str, float] = {}
     count_by_cat: dict[str, int] = {}
     for r in receipts:
@@ -146,10 +136,10 @@ def build_liquidation_pdf(
         by_cat[cat] = by_cat.get(cat, 0.0) + float(r.get("total_amount") or 0)
         count_by_cat[cat] = count_by_cat.get(cat, 0) + 1
 
-    pdf.set_font("Arial", "B", 13)
+    pdf.set_font("Helvetica", "B", 13)
     pdf.cell(0, 8, "Breakdown by category", ln=True)
 
-    pdf.set_font("Arial", "B", 10)
+    pdf.set_font("Helvetica", "B", 10)
     pdf.set_fill_color(235, 235, 235)
     col_w = [CONTENT_W * 0.5, CONTENT_W * 0.15, CONTENT_W * 0.35]
     pdf.cell(col_w[0], 7, "Category", border=1, fill=True)
@@ -157,22 +147,21 @@ def build_liquidation_pdf(
     pdf.cell(col_w[2], 7, "Amount", border=1, fill=True, align="R")
     pdf.ln()
 
-    pdf.set_font("Arial", "", 10)
+    pdf.set_font("Helvetica", "", 10)
     for cat, amt in sorted(by_cat.items(), key=lambda x: x[1], reverse=True):
         pdf.cell(col_w[0], 6, cat, border=1)
         pdf.cell(col_w[1], 6, str(count_by_cat[cat]), border=1, align="C")
         pdf.cell(col_w[2], 6, _fmt_money(amt, dominant_ccy), border=1, align="R")
         pdf.ln()
 
-    pdf.set_font("Arial", "B", 10)
+    pdf.set_font("Helvetica", "B", 10)
     pdf.cell(col_w[0], 7, "TOTAL", border=1)
     pdf.cell(col_w[1], 7, str(len(receipts)), border=1, align="C")
     pdf.cell(col_w[2], 7, _fmt_money(total, dominant_ccy), border=1, align="R")
     pdf.ln(8)
 
-    # ---------- Details, one block per receipt ----------
     pdf.add_page()
-    pdf.set_font("Arial", "B", 13)
+    pdf.set_font("Helvetica", "B", 13)
     pdf.cell(0, 8, "Receipt details", ln=True)
     pdf.ln(2)
 
@@ -189,7 +178,7 @@ def build_liquidation_pdf(
         pdf.rect(MARGIN, card_top, CONTENT_W, card_height_estimate, style="DF")
 
         pdf.set_xy(MARGIN + 4, card_top + 4)
-        pdf.set_font("Arial", "B", 11)
+        pdf.set_font("Helvetica", "B", 11)
         pdf.set_text_color(0, 0, 0)
         merchant = r.get("merchant_id") or "Unknown merchant"
         pdf.cell(0, 6, f"{i}. {merchant}", ln=True)
@@ -201,43 +190,42 @@ def build_liquidation_pdf(
         meta_x = MARGIN + 4
         meta_y = pdf.get_y() + 1
         pdf.set_xy(meta_x, meta_y)
-        pdf.set_font("Arial", "", 9)
+        pdf.set_font("Helvetica", "", 9)
         pdf.set_text_color(60, 60, 60)
 
         fields = [
-            ("Date",          r.get("transaction_date") or "—"),
-            ("Documented",    r.get("documentation_date") or "—"),
-            ("OR / Invoice",  r.get("or_number") or "—"),
-            ("Category",      r.get("category") or "—"),
-            ("Currency",      r.get("currency") or "—"),
+            ("Date",          r.get("transaction_date") or "N/A"),
+            ("Documented",    r.get("documentation_date") or "N/A"),
+            ("OR / Invoice",  r.get("or_number") or "N/A"),
+            ("Category",      r.get("category") or "N/A"),
+            ("Currency",      r.get("currency") or "N/A"),
             ("Total",         _fmt_money(float(r.get("total_amount") or 0),
                                           r.get("currency") or dominant_ccy)),
             ("PHP Total",     _fmt_money(float(r.get("php_total_amount") or 0), "PHP")),
         ]
         for label, value in fields:
             pdf.set_x(meta_x)
-            pdf.set_font("Arial", "B", 9)
+            pdf.set_font("Helvetica", "B", 9)
             pdf.cell(28, 5, f"{label}:", border=0)
-            pdf.set_font("Arial", "", 9)
+            pdf.set_font("Helvetica", "", 9)
             pdf.multi_cell(meta_w - 28, 5, str(value), border=0)
 
         desc = (r.get("description") or "").strip()
         if desc:
             pdf.set_x(meta_x)
-            pdf.set_font("Arial", "B", 9)
+            pdf.set_font("Helvetica", "B", 9)
             pdf.cell(28, 5, "Description:", border=0)
-            pdf.set_font("Arial", "", 9)
+            pdf.set_font("Helvetica", "", 9)
             pdf.multi_cell(meta_w - 28, 5, desc)
 
         img_ctx = (r.get("image_context") or "").strip()
         if img_ctx:
             pdf.set_x(meta_x)
-            pdf.set_font("Arial", "B", 9)
+            pdf.set_font("Helvetica", "B", 9)
             pdf.cell(28, 5, "Context:", border=0)
-            pdf.set_font("Arial", "I", 9)
+            pdf.set_font("Helvetica", "I", 9)
             pdf.multi_cell(meta_w - 28, 5, img_ctx[:300])
 
-        # Right-side image
         if include_images and r.get("backblaze_image"):
             try:
                 url = image_url_resolver(r["backblaze_image"])
@@ -247,13 +235,12 @@ def build_liquidation_pdf(
                     _try_add_image(pdf, img_bytes, max_w=img_w, max_h=76)
                 else:
                     pdf.set_xy(MARGIN + CONTENT_W - img_w - 4, card_top + 6)
-                    pdf.set_font("Arial", "I", 8)
+                    pdf.set_font("Helvetica", "I", 8)
                     pdf.set_text_color(150, 150, 150)
                     pdf.cell(img_w, 6, "[image unavailable]", align="C")
             except Exception:
                 pass
 
-        # Move cursor past the card
         pdf.set_xy(MARGIN, card_top + card_height_estimate + 4)
         pdf.set_text_color(0, 0, 0)
 
