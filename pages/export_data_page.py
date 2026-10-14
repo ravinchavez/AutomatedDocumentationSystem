@@ -94,7 +94,6 @@ def export_data_page():
 
     filtered = df.loc[mask].copy()
 
-    # ---- Preview ----
     st.subheader("2. Preview")
     st.caption(f"**{len(filtered)}** of **{len(df)}** receipts match your filters.")
 
